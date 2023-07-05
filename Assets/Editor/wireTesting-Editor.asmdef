@@ -1,0 +1,10 @@
+{
+  "name": "wireTesting-Editor",
+  "references": [
+    "wireTesting"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": []
+}
