@@ -35,6 +35,15 @@ public class Wires {
         self.transform.Find("cutwire").gameObject.SetActive(false);
         cut = false;
         self.transform.localPosition = new Vector3(0.485f, 0, -0.2f);
+        string CB = "";
+        foreach(char i in Color.name) {
+            if("ABCDEFGHIJKLMNOPQRSTUVWXYZ".Contains(i)) {
+                CB += i;
+            }
+        }
+        CB += ' ';
+        module.LeftColorblindTexts[number].text = CB[0].ToString();
+        module.RightColorblindTexts[number].text = CB[1].ToString();
     }
 
     public void wirecut() {

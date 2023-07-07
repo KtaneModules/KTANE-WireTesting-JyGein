@@ -27,6 +27,8 @@ public class wireTesting : MonoBehaviour {
     public MeshRenderer StaticCube;
     public Texture[] Static;
     public Material SolveMaterial;
+    public TextMesh[] LeftColorblindTexts;
+    public TextMesh[] RightColorblindTexts;
 
     string ModuleName;
     static int ModuleIdCounter = 1;
@@ -324,16 +326,43 @@ public class wireTesting : MonoBehaviour {
     }
 
 #pragma warning disable 414
-    private readonly string TwitchHelpMessage = @"Use !{0} to do something.";
+    private readonly string TwitchHelpMessage = @"Use !{0} cut # To cut a wire. Use !{0} cutall to cut every wire in order with a delay. Use !{0} CONFIRM to press CONFIRM. Use !{0} DENY to press DENY.";
 #pragma warning restore 414
 
     // Twitch Plays (TP) documentation: https://github.com/samfundev/KtaneTwitchPlays/wiki/External-Mod-Module-Support
 
-    KMSelectable[] ProcessTwitchCommand (string Command) {
-        return null;
+    IEnumerator ProcessTwitchCommand (string Command) {
+        string COMMAND = Command.ToUpper().Trim();
+        Match m = Regex.Match(COMMAND, "(CUT [1-5]|CUTALL|CONFIRM|DENY)$");
+        if(!m.Success) {
+            yield break;
+        }
+        string command = m.Groups[1].Value;
+        switch(command) {
+            case "CUTALL":
+                yield return null;
+                for(int i = 0; i<5; i++) {
+                    yield return wireSelectables[i];
+                    yield return new WaitForSeconds(1.5f);
+                }
+                break;
+            case "CONFIRM":
+                yield return null;
+                yield return CONFIRM;
+                break;
+            case "DENY":
+                yield return null;
+                yield return DENY;
+                break;
+            default:
+                yield return null;
+                yield return wireSelectables[int.Parse(command[command.Length - 1].ToString())-1];
+                break;
+        }
     }
 
-    KMSelectable[] TwitchHandleForcedSolve () {
-        return null;
+    void TwitchHandleForcedSolve () {
+        Solve();
+        return;
     }
 }
