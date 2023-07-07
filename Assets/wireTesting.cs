@@ -7,31 +7,49 @@ using UnityEngine;
 using KModkit;
 using Rnd = UnityEngine.Random;
 
-//HI :3 gl with modding
+//Audio.PlayGameSoundAtTransform(KMSoundOverride.SoundEffect.Strike, transform);
 
-
-     // this template here need to be the EXACT same thing as yo module type
 public class wireTesting : MonoBehaviour {
-     // might aswell name the script file the same thing
-
-    // Modding Tutorial by Deaf: https://www.youtube.com/watch?v=YobuGSBl3i0
 
     public KMBombInfo Bomb;
     public KMAudio Audio;
-    public KMBombModule Module  ;
+    public KMBombModule Module;
+    public GameObject[] wireObjects;
+    public KMSelectable[] wireSelectables;
+    public Transform WireContainer;
+    public Texture[] WireColors;
+    public KMSelectable CONFIRM;
+    public KMSelectable DENY;
+    public MeshRenderer[] LEDS;
+    public Material[] LEDMaterials;
+    public Material[] StatusLightMaterials;
+    public MeshRenderer StatusLightMesh;
+    public MeshRenderer StaticCube;
+    public Texture[] Static;
+    public Material SolveMaterial;
 
     string ModuleName;
     static int ModuleIdCounter = 1;
     int ModuleId;
     private bool ModuleSolved;
-
+    GameObject wire;
+    Wires[] Wires = new Wires[5];
+    int stage = 1;
+    string[,] validTable = new string[,] {
+        { "UwU", "x", "Three", "D", "Tree", "Red", "UwU", "Tree", "Red", "Tree", "Tree", "D", "UwU", "Tree", "one" },
+        { "Three", "UwU", "Two", "Two", "HELP", "Tree", "Tree", "UwU", "Tree", "X", "Two", "X", "D", "UwU", "HELP" },
+        { "X", "HELP", "UwU", "HELP", "X", "one", "A", "Red", "UwU", "Four", "A", "Four", "HELP", "X", "UwU" },
+        { "D", "one", "HELP", "UwU", "Four", "HELP", "Three", "HELP", "HELP", "UwU", "A", "A", "one", "X", "Red" },
+        { "D", "D", "Four", "Tree", "UwU", "X", "Three", "A", "Red", "HELP", "UwU", "Four", "one", "X", "A" },
+        { "Four", "Three", "A", "Three", "Red", "UwU", "D", "A", "A", "X", "A", "UwU", "A", "Three", "Two" }
+    };
+    
     void Awake () { //Shit that happens before Start
         ModuleName = Module.ModuleDisplayName;
         ModuleId = ModuleIdCounter++;
         GetComponent<KMBombModule>().OnActivate += Activate;
+        
         /*
-         * How to make buttons work:
-         * 
         foreach (KMSelectable object in keypad) {
             object.OnInteract += delegate () { keypadPress(object); return false; };
         }
@@ -47,27 +65,261 @@ public class wireTesting : MonoBehaviour {
     }
 
     void Start () { //Shit
-        
+        Log("Stage 1:");
+        for(int i=0; i<5; i++) {
+            wire = Instantiate(wireObjects[Rnd.Range(0, wireObjects.Length)]);
+            wire.transform.parent = WireContainer.Find($"{i}wire").transform;
+            //wire.transform.localScale = new Vector3(wire.transform.localScale.x*(32.6632f/(32.6632f+6)), wire.transform.localScale.y, wire.transform.localScale.z);
+            wire.transform.localRotation = Quaternion.Euler(-90, 0, 0);
+            Wires[i] = new Wires(this, wire, i);
+            Wires[i].Startup();
+            int dummy = i;
+            wireSelectables[dummy].OnInteract = delegate () { Wires[dummy].wirecut(); return false; };
+            Log($"Wire {i+1} is colored {Wires[i].Color.name} and will {Wires[i].Action} when cut.");
+        }
+        DENY.OnInteract = delegate () { SolCheck(false); return false; };
+        CONFIRM.OnInteract = delegate () { SolCheck(true); return false; };
     }
 
     void Update () { //Shit that happens at any point after initialization
-
+        
     }
 
-    void Solve () { //Call this method when you want the module to solve
-        Module.HandlePass();
-        Log("Correct! Module Solved.");
+    void SolCheck(bool type) {
+        if(ModuleSolved) { return; }
+        int count = 0;
+        int count2 = 0;
+        bool actualPress = false;
+        foreach(Wires Wire in Wires) {
+            switch(validTable[Wire.ActionNumber, Wire.ColorNumber]) {
+                case "Red":
+                    count = 0;
+                    foreach(Wires i in Wires) {
+                        if(i.Color.name.Contains("Red")) {
+                            count++;
+                        }
+                    }
+                    if(count>=3) {
+                        Wire.Valid = true;
+                    }
+                    break;
+                case "Two":
+                    if(!(stage == 2 || Wire.number == 2)) {
+                        Wire.Valid = true;
+                    }
+                    break;
+                case "HELP":
+                    foreach(char i in "PLEASEHELPME") {
+                        if(Bomb.GetSerialNumber().Contains(i)) {
+                            Wire.Valid = true;
+                        }
+                    }
+                    break;
+                case "UwU":
+                    Wire.Valid = true;
+                    break;
+                case "Three":
+                    if(Wires[(Wire.number+1)%5].Color.name.Contains("Red")) {
+                        Wire.Valid = true;
+                    }
+                    break;
+                case "Tree":
+                    if(Wire.number == 3 || Bomb.GetSerialNumber().Contains(Wire.number.ToString())) {
+                        Wire.Valid = true;
+                    }
+                    break;
+                case "A":
+                    count = 0;
+                    foreach(Wires i in Wires) {
+                        if(i.Action == "Be Pressed") {
+                            count++;
+                        }
+                    }
+                    if((count >= 2)) {
+                        Wire.Valid = true;
+                    }
+                    break;
+                case "Four":
+                    if(char.IsNumber(Bomb.GetSerialNumber()[1])) {
+                        foreach(char i in "GHIJKLMNOPQRSTUVWXYZ") {
+                            if(Bomb.GetSerialNumber().Contains(i)) {
+                                Wire.Valid = true;
+                            }
+                        }
+                    } else {
+                        if(Bomb.GetSerialNumber().Contains('4')) {
+                            Wire.Valid = true;
+                        }
+                    }
+                    break;
+                case "X":
+                    if(Bomb.GetStrikes() < 3) {
+                        Wire.Valid = true;
+                    }
+                    break;
+                case "D":
+                    if(Bomb.IsPortPresent(Port.DVI)) {
+                        Wire.Valid = true;
+                    }
+                    break;
+                case "one":
+                    break;
+            }
+            count2++;
+            Log($"Wire {count2} is {boolToValid(Wire.Valid)}");
+        }
+        count = 0;
+        foreach(Wires Wire in Wires) {
+            if(Wire.Valid) { count++; }
+        }
+        Log($"{boolToPressed(type)} was pressed.");
+        if(count >= 4) { actualPress = true; }
+        if(actualPress == type) { Log($"Correct! Stage {stage.ToString()} complete."); StageUp(); } else { Strike(); }
+    }
+
+    void StageUp() {
+        if(stage==3) {
+            LEDS[stage - 1].material = LEDMaterials[1];
+            Solve();
+            return;
+        }
+        if(_staticingCoroutine != null)
+            StopCoroutine(_staticingCoroutine);
+        _staticingCoroutine = StaticingCube();
+        StartCoroutine(_staticingCoroutine);
+        LEDS[stage-1].material = LEDMaterials[1];
+        stage++;
+        Log($"Stage {stage.ToString()}:");
+        for(int i=0; i<5; i++) {
+            Wires[i].Startup();
+            Log($"Wire {i+1} is colored {Wires[i].Color.name} and will {Wires[i].Action} when cut.");
+        }
+    }
+
+    IEnumerator _staticingCoroutine;
+
+    IEnumerator StaticingCube() {
+        StaticCube.enabled = true;
+        float value = 0f;
+        for(float timer = 0; timer<2; timer+=Time.deltaTime) {
+            if(timer >= value+0.1f) {
+                StaticCube.material.mainTexture = Static[Rnd.Range(0, Static.Length)];
+                value = timer;
+            }
+            yield return null;
+        }
+        StaticCube.enabled = false;
+    }
+
+    IEnumerator SolvingCube() {
+        StaticCube.enabled = true;
+        float value = 0f;
+        for(float timer = 0; timer < 2; timer += Time.deltaTime) {
+            if(timer >= value + 0.1f) {
+                StaticCube.material = SolveMaterial;
+                StaticCube.material.mainTexture = null;
+                value = timer;
+            }
+            yield return null;
+        }
+        StaticCube.enabled = true;
+    }
+
+    void Solve () {
         ModuleSolved = true;
+        Module.HandlePass();
+        Log("Module Solved.");
+        if(_staticingCoroutine != null)
+            StopCoroutine(_staticingCoroutine);
+        _staticingCoroutine = SolvingCube();
+        StartCoroutine(_staticingCoroutine);
     }
 
-    void Strike () { //Call this method when you want ot module to strike
+    void Strike () {
+        StartCoroutine(StaticingCube());
+        foreach(MeshRenderer LED in LEDS) {
+            LED.material = LEDMaterials[0];
+        }
+        stage = 1;
+        Log($"Stage 1:");
+        for(int i = 0; i < 5; i++) {
+            Wires[i].Startup();
+            Log($"Wire {i} is colored {Wires[i].Color.name} and will {Wires[i].Action} when cut.");
+        }
         Module.HandleStrike();
         Log("Incorrect! Strike Issued.");
+        FakeStrike();
     }
 
-    void Log (string message) { //I did the logging for you <3. just do Log("message"); for logging (and please log like OMG just log its so easy esp with this)
-        //If this underlined red for you (giving a compiler error), hover it and click on like the show possible fixes text, then click on upgrade this/all projects to c# version 6.
+    IEnumerator _blinkingCoroutine;
+
+    public void FakeStrike () {
+        if(_blinkingCoroutine != null)
+            StopCoroutine(_blinkingCoroutine);
+        _blinkingCoroutine = StrikeBlink();
+        StartCoroutine(_blinkingCoroutine);
+    }
+
+    public void bip() {
+        if(_blinkingCoroutine != null)
+            StopCoroutine(_blinkingCoroutine);
+        _blinkingCoroutine = bipBlink();
+        StartCoroutine(_blinkingCoroutine);
+    }
+
+    public void FakeSolve () {
+        if(_blinkingCoroutine != null)
+            StopCoroutine(_blinkingCoroutine);
+        _blinkingCoroutine = SolveBlink();
+        StartCoroutine(_blinkingCoroutine);
+    }
+
+    IEnumerator StrikeBlink() {
+        Audio.PlayGameSoundAtTransform(KMSoundOverride.SoundEffect.Strike, transform);
+        StatusLightMesh.material = StatusLightMaterials[1];
+        yield return new WaitForSeconds(1f);
+        StatusLightMesh.material = StatusLightMaterials[0];
+    }
+
+    IEnumerator bipBlink() {
+        StatusLightMesh.material = StatusLightMaterials[2];
+        yield return new WaitForSeconds(1f);
+        StatusLightMesh.material = StatusLightMaterials[0];
+    }
+
+    IEnumerator SolveBlink() {
+        StatusLightMesh.material = StatusLightMaterials[3];
+        yield return new WaitForSeconds(1f);
+        StatusLightMesh.material = StatusLightMaterials[0];
+    }
+
+    public void Log (string message) { 
         Debug.Log($"[{ModuleName} #{ModuleId}] {message}");
+    }
+    
+    public void WirePress(GameObject self) {
+        StartCoroutine(PressMovement(self));
+    }
+
+    IEnumerator PressMovement(GameObject self) {
+        for(float timer = 0; timer < 1; timer += Time.deltaTime) {
+            self.transform.localPosition += new Vector3(0, 0, 0.1f * Time.deltaTime);
+            yield return null;
+        }
+    }
+
+    string boolToValid(bool i) {
+        if(i) {
+            return "Valid";
+        }
+        return "Invalid";
+    }
+
+    string boolToPressed(bool i) {
+        if(i) {
+            return "CONFIRM";
+        }
+        return "DENY";
     }
 
 #pragma warning disable 414
@@ -76,11 +328,11 @@ public class wireTesting : MonoBehaviour {
 
     // Twitch Plays (TP) documentation: https://github.com/samfundev/KtaneTwitchPlays/wiki/External-Mod-Module-Support
 
-    IEnumerator ProcessTwitchCommand (string Command) {
-        yield return null;
+    KMSelectable[] ProcessTwitchCommand (string Command) {
+        return null;
     }
 
-    IEnumerator TwitchHandleForcedSolve () {
-        yield return null;
+    KMSelectable[] TwitchHandleForcedSolve () {
+        return null;
     }
 }
