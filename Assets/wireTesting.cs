@@ -43,6 +43,7 @@ public class wireTesting : MonoBehaviour {
         { "D", "D", "Four", "Tree", "UwU", "X", "Three", "A", "Red", "HELP", "UwU", "Four", "one", "X", "A" },
         { "Four", "Three", "A", "Three", "Red", "UwU", "D", "A", "A", "X", "A", "UwU", "A", "Three", "Two" }
     };
+    Vector3 wireSize = new Vector3(32.21814f, 44.89068f, 401.3983f);
     
     void Awake () { //Shit that happens before Start
         ModuleName = Module.ModuleDisplayName;
@@ -69,7 +70,7 @@ public class wireTesting : MonoBehaviour {
         for(int i=0; i<5; i++) {
             wire = Instantiate(wireObjects[Rnd.Range(0, wireObjects.Length)]);
             wire.transform.parent = WireContainer.Find($"{i}wire").transform;
-            //wire.transform.localScale = new Vector3(wire.transform.localScale.x*(32.6632f/(32.6632f+6)), wire.transform.localScale.y, wire.transform.localScale.z);
+            wire.transform.localScale = wireSize;
             wire.transform.localRotation = Quaternion.Euler(-90, 0, 0);
             Wires[i] = new Wires(this, wire, i);
             Wires[i].Startup();
