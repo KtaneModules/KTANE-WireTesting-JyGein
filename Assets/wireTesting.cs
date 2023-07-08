@@ -181,7 +181,7 @@ public class wireTesting : MonoBehaviour {
     }
 
     void StageUp() {
-        if(stage==3) {
+        if(stage==5) {
             LEDS[stage - 1].material = LEDMaterials[1];
             Solve();
             return;
