@@ -138,7 +138,7 @@ public class wireTesting : MonoBehaviour {
                             count++;
                         }
                     }
-                    if((count >= 2)) {
+                    if(!(count >= 2)) {
                         Wire.Valid = true;
                     }
                     break;
