@@ -107,7 +107,7 @@ public class wireTesting : MonoBehaviour {
                     }
                     break;
                 case "Two":
-                    if(!(stage == 2 || Wire.number == 2)) {
+                    if(!(stage == 2 || Wire.number+1 == 2)) {
                         Wire.Valid = true;
                     }
                     break;
@@ -122,12 +122,12 @@ public class wireTesting : MonoBehaviour {
                     Wire.Valid = true;
                     break;
                 case "Three":
-                    if(Wires[(Wire.number+1)%5].Color.name.Contains("Red")) {
+                    if(!Wires[(Wire.number+1)%5].Color.name.Contains("Red")) {
                         Wire.Valid = true;
                     }
                     break;
                 case "Tree":
-                    if(Wire.number == 3 || Bomb.GetSerialNumber().Contains(Wire.number.ToString())) {
+                    if(Wire.number+1 == 3 || Bomb.GetSerialNumber().Contains((Wire.number+1).ToString())) {
                         Wire.Valid = true;
                     }
                     break;
@@ -150,7 +150,7 @@ public class wireTesting : MonoBehaviour {
                             }
                         }
                     } else {
-                        if(Bomb.GetSerialNumber().Contains('4')) {
+                        if(!Bomb.GetSerialNumber().Contains('4')) {
                             Wire.Valid = true;
                         }
                     }
